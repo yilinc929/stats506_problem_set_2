@@ -1,32 +1,316 @@
 ---
-title: "PS2"
+title: "Problem Set 2"
 author: "Yilin Chen 30221403"
 format: html
 editor: visual
 ---
 
-## Quarto
+### Link to my GitHub repository: 
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+## Problem 1
 
-## Running Code
+### a)
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+-   Version 1: Implement this game using a loop over the die rolls.
+
+    ```{r}
+    cost_per_roll<-2
+    play_dice_1<-function(num_rolls) {
+      win<-0
+      for (i in 1:num_rolls) {
+        roll<-sample(1:6,1,replace=TRUE)
+        if (roll %in% c(2,4,6)) {
+          win<-win+roll
+        } else {
+          win<-win-cost_per_roll
+        }
+      }
+      return(win)
+    }
+    ```
+
+-   Version 2: Implement this game using built-in R vectorized functions.
+
+    ```{r}
+    play_dice_2<-function(num_rolls) {
+      roll<-sample(1:6, num_rolls,replace=TRUE)
+      win<-sum(ifelse(roll %in% c(2,4,6),roll,-cost_per_roll))
+      return(win)
+    }
+    ```
+
+-   Version 3: Implement this by collapsing the die rolls into a single `table()`.
+
+    ```{r}
+    play_dice_3<-function(num_rolls) {
+      rolls<-sample(1:6,num_rolls,replace=TRUE)
+      roll_table<-table(rolls)
+      cols<-as.integer(names(roll_table))
+      cols<-cols[cols %in% c(2,4,6)]
+      
+      win<-sum(cols*roll_table[as.character(cols)])
+      total_cost<-cost_per_roll*num_rolls
+      total_win<-win-total_cost
+      return(total_win)
+    }
+    ```
+
+-   Version 4: Implement this game by using one of the \"`apply`\" functions.
+
+    ```{r}
+    play_dice_4<-function(num_rolls){
+      roll1<-sample(1:6,num_rolls,replace=TRUE)
+      win_total<-function(roll){
+        if (any(roll) %in% c(2, 4, 6)) {
+          return(roll)
+      } else {
+         return(-cost_per_roll)
+      }
+    }
+      win<-sum(sapply(roll1,win_total))
+      return(win)
+    }
+    ```
+
+### b) 
+
+Demonstrated that all versions work.
 
 ```{r}
-1 + 1
+play_dice_1(3)
+play_dice_1(3000)
 ```
-
-You can add options to executable code like this
 
 ```{r}
-#| echo: false
-2 * 2
+play_dice_2(3)
+play_dice_2(3000)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+```{r}
+play_dice_3(3)
+play_dice_3(3000)
+```
+
+```{r}
+play_dice_4(3)
+play_dice_4(3000)
+```
+
+### c)
+
+For this part, I need to demonstrate that the four versions give the same result. To do so, I employed the "`seed="` and `set.seed()` , by adding it into the functions I created in part a), I can control the randomization process, so that all four versions get the same random sample.
+
+```{r}
+# Version 1
+play_dice_loop<-function(num_rolls,seed=NULL) {
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
+  win<-0
+  for (i in 1:num_rolls) {
+    roll<-sample(1:6,1,replace=TRUE)
+    if (roll %in% c(2,4,6)) {
+      win<-win+roll
+    } else {
+      win<-win-cost_per_roll
+    }
+  }
+  return(win)
+}
+
+# Version 2
+play_dice_vectorized<-function(num_rolls,seed=NULL){
+  if (!is.null(seed)){
+    set.seed(seed)  # Set a seed if provided
+  }
+  roll<-sample(1:6, num_rolls,replace=TRUE)
+  win<-sum(ifelse(roll %in% c(2,4,6),roll,-cost_per_roll))
+  return(win)
+}
+
+# Version 3
+play_dice_collapsed<-function(num_rolls,seed=NULL) {
+  if (!is.null(seed)) {
+    set.seed(seed) 
+  }
+  rolls<-sample(1:6, num_rolls, replace = TRUE)
+  roll_table<-table(rolls)
+  cols<-as.integer(names(roll_table))
+  cols<-cols[cols %in% c(2,4,6)]
+  
+  win<-sum(cols*roll_table[as.character(cols)])
+  total_cost<-cost_per_roll*(num_rolls-sum(roll_table[as.character(cols)]))
+  total_winnings<-win-total_cost
+  return(total_winnings)
+}
+
+# Version 4
+play_dice_apply<-function(num_rolls,seed=NULL) {
+  if (!is.null(seed)) {
+    set.seed(seed)
+  }
+  
+  roll1<-sample(1:6,num_rolls,replace=TRUE)
+  win_total<-function(roll){
+    if (roll %in% c(2, 4, 6)) {
+      return(roll)
+  } else {
+     return(-cost_per_roll)
+  }
+}
+  win<-sum(sapply(roll1,win_total))
+  return(win)
+}
+```
+
+```{r}
+input1<-3
+input2<-3000
+seed1<-12
+seed2<-123
+
+result1_loop<-play_dice_loop(input1, seed1)
+result1_vectorized<-play_dice_vectorized(input1, seed1)
+result1_collapsed<-play_dice_collapsed(input1, seed1)
+result1_apply<-play_dice_apply(input1, seed1)
+
+result2_loop<-play_dice_loop(input2, seed2)
+result2_vectorized<-play_dice_vectorized(input2, seed2)
+result2_collapsed<-play_dice_collapsed(input2, seed2)
+result2_apply<-play_dice_apply(input2, seed2)
+
+```
+
+```{r}
+print("Results for input 3:")
+print(result1_loop)
+print(result1_vectorized)
+print(result1_collapsed)
+print(result1_apply)
+```
+
+```{r}
+print("Results for input 3000:")
+print(result2_loop)
+print(result2_vectorized)
+print(result2_collapsed)
+print(result2_apply)
+```
+
+### d)
+
+```{r}
+library(microbenchmark)
+results_low<-microbenchmark(
+  V1=play_dice_1(100),
+  V2=play_dice_2(100),
+  V3=play_dice_3(100),
+  V4=play_dice_4(100))
+
+results_high<-microbenchmark(
+  V1=play_dice_1(10000),
+  V2=play_dice_2(10000),
+  V3=play_dice_3(10000),
+  V4=play_dice_4(10000))
+print(results_low)
+print(results_high)
+```
+
+Version 2 where built-in R vectorized functions are used has the smallest mean processing time for input 100 and 10000. Version 3 does not have the best performance when the input is 100 but it is only slightly slower when the input is 10000, that is, Version 3 works better with larger input. Version 1 function using loops is the slowest function among all when input is 100 and 10000.
+
+### e)
+
+```{r}
+MC_dice<-function(num_simulation,num_plays_per_simulation){
+  results<-numeric(num_simulation)
+  
+  for (i in 1:num_simulation){
+    win<-sum(sample(c(1:6),num_plays_per_simulation,replace=TRUE))
+    results[i]<-win-(num_plays_per_simulation*cost_per_roll)
+  }
+  mean_win<-mean(results)
+  return(mean_win)
+}
+MC_dice(10000,100)
+```
+
+To determine if the dice game is fair, we conduct a Monte Carlo simulation by simulating a large number of games. I choose this simulation to repeat 10000 times and 100 plays for each simulation. In a fair game, the expected winnings over a large number of plays should be close to zero. However, the result of simulation demonstrated a large expected winning amount (mean) of 149.8684, it is not a fair game.
+
+## Problem 2
+
+### a)
+
+```{r}
+data<-read.csv('/Users/cathy/Desktop/cars.csv')
+colnames(data) <- c("height", "length", "width", "driveline", "eng_type", "hybrid", "gears", "transmission","city_mpg", "fuel_type", "highway_mpg", "classification","ID","make","model_year","year","horsepower","torque")
+print(head(data))
+```
+
+### b)
+
+```{r}
+newdata<-data[which(data$fuel_type=='Gasoline'),]
+print(head(newdata))
+```
+
+### c)
+
+```{r}
+mod<-lm(highway_mpg~horsepower+torque+width+length+height+as.factor(year),data=newdata)
+summary(mod)
+```
+
+The coefficient for horsepower is approximately 0.01635, since it is positive, it indicates a positive relationship between the horsepower and highway mpg. For every one-unit increase in horsepower, highway mpg should increase by 0.01635 units, assuming all other factors remain constant. The p-value (7.96e-13) is very small, which suggests that this relationship is highly statistically significant. Therefore, we have strong evidence to conclude that horsepower has a significant impact on highway mpg.
+
+### d)
+
+```{r}
+library(emmeans)
+mod_interaction<-lm(highway_mpg~horsepower*torque+width+length+height+as.factor(year),data=newdata)
+summary(mod_interaction)
+em<-emmeans(mod_interaction,~horsepower*torque,at=list(horsepower=c(150,300,450),torque=c(100,250,400)))
+emmip(em, horsepower~torque,at=list(wt=1:5))
+```
+
+### e)
+
+Creating the dummy variables manually for the variable year.
+
+```{r}
+data2<-newdata
+data2$y1<-ifelse(data2$year=="2010",1,0)
+data2$y2<-ifelse(data2$year=="2011",1,0)
+data2$y3<-ifelse(data2$year=="2012",1,0)
+```
+
+Calculating beta hats manually for regular linear model.
+
+```{r}
+X<-as.matrix(data2[, c("horsepower","torque","width","length","height","y1","y2","y3")])
+X<-cbind(1,X)
+Y<-data2$highway_mpg
+beta_hat<-solve(t(X) %*% X) %*% t(X) %*% Y
+print(beta_hat)
+coefficients(mod)
+```
+
+Applying the same method for the model with interaction.
+
+```{r}
+X_int<-cbind(1,data2$horsepower,data2$torque,data2$width,data2$length,data2$height,data2$y1,data2$y2,data2$y3,data2$horsepower*data2$torque)
+beta_hat2<-solve(t(X_int) %*% X_int) %*% t(X_int) %*% Y
+print(beta_hat2)
+coefficients(mod_interaction)
+```
+
+Both models in this part give the same results as what part c and d gives.
+
+## Problem 3
+
+### a)
 
 ``` stata
+
 . import delimited "/Users/cathy/Desktop/cars.csv"
 (encoding automatically selected: ISO-8859-1)
 (18 vars, 5,076 obs)
@@ -100,37 +384,9 @@ Sorted by:
 
 . rename v18 torque
 
-. describe
-
-Contains data
- Observations:         5,076                  
-    Variables:            18                  
--------------------------------------------------------------------------------------------------------------------
-Variable      Storage   Display    Value
-    name         type    format    label      Variable label
--------------------------------------------------------------------------------------------------------------------
-height          int     %8.0g                 Dimensions.Height
-length          int     %8.0g                 Dimensions.Length
-width           int     %8.0g                 Dimensions.Width
-driveline       str17   %17s                  Engine Information.Driveline
-eng_type        str60   %60s                  Engine Information.Engine Type
-hybrid          str4    %9s                   Engine Information.Hybrid
-gear            byte    %8.0g                 Engine Information.Number of Forward Gears
-transmission    str30   %30s                  Engine Information.Transmission
-city_mpg        byte    %8.0g                 Fuel Information.City mpg
-fuel_type       str22   %22s                  Fuel Information.Fuel Type
-highway_mpg     int     %8.0g                 Fuel Information.Highway mpg
-classification  str22   %22s                  Identification.Classification
-ID              str67   %67s                  Identification.ID
-make            str18   %18s                  Identification.Make
-model_year      str48   %48s                  Identification.Model Year
-year            int     %8.0g                 Identification.Year
-horsepower      int     %8.0g                 Engine Information.Engine Statistics.Horsepower
-torque          int     %8.0g                 Engine Information.Engine Statistics.Torque
--------------------------------------------------------------------------------------------------------------------
-Sorted by: 
-     Note: Dataset has changed since last saved.
 ```
+
+### b)
 
 ``` stata
 . keep if fuel_type=="Gasoline"
@@ -140,6 +396,8 @@ Sorted by:
 . 
 . * restore
 ```
+
+### c)
 
 ``` stata
 . regress highway_mpg horsepower torque width length height i.year
@@ -168,6 +426,10 @@ Sorted by:
        _cons |   32.29266   .7225982    44.69   0.000     30.87602     33.7093
 ------------------------------------------------------------------------------
 ```
+
+The coefficient for horsepower is approximately 0.01635, since it is positive, it indicates a positive relationship between the horsepower and highway mpg. For every one-unit increase in horsepower, highway mpg should increase by 0.01635 units, assuming all other factors remain constant. The p-value (\<0.001) is very small, which suggests that this relationship is highly statistically significant. Therefore, we have strong evidence to conclude that horsepower has a significant impact on highway mpg.
+
+### d)
 
 ``` stata
 regress highway_mpg c.horsepower##c.torque c.width c.length c.height i.year
