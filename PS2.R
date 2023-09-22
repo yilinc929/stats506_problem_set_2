@@ -1,10 +1,10 @@
-## Problem 1
+
 ## Problem 1
 ### version 1: using loop
 cost_per_roll<-2
-play_dice_1<-function(num_dice){
+play_dice_1<-function(num_rolls){
   win<-0
-  for (i in 1:num_dice) {
+  for (i in 1:num_rolls) {
     roll<-sample(1:6,1,replace=TRUE)
     if (roll %in% c(2,4,6)) {
       win<-win+roll
@@ -19,8 +19,8 @@ play_dice_1(10)
 play_dice_1(3)
 play_dice_1(3000)
 ### version 2: using built-in R vectorized function
-play_dice_2<-function(num_dice) {
-  roll<-sample(1:6, num_dice,replace=TRUE)
+play_dice_2<-function(num_rolls) {
+  roll<-sample(1:6, num_rolls,replace=TRUE)
   win<-sum(ifelse(roll %in% c(2,4,6),roll,-cost_per_roll))
   return(win)
 }
@@ -29,16 +29,30 @@ play_dice_2(5)
 play_dice_2(10)
 play_dice_2(3000)
 ### version 3: collapsing the die rolls into a single table()
-
+play_dice_3<-function(num_rolls) {
+  rolls<-sample(1:6,num_rolls,replace=TRUE)
+  roll_table<-table(rolls)
+  cols<-as.integer(names(roll_table))
+  cols<-cols[cols %in% c(2,4,6)]
+  
+  win<-sum(cols*roll_table[as.character(cols)])
+  total_cost<-cost_per_roll*num_rolls
+  total_win<-win-total_cost
+  return(total_win)
+}
+play_dice_3(3)
+play_dice_3(5)
+play_dice_3(10)
+play_dice_3(3000)
 
 ### version 4: using one of the “apply” functions.
-play_dice_4<-function(num_dice){
-roll1<-sample(1:6,num_dice,replace=TRUE)
+play_dice_4<-function(num_rolls){
+roll1<-sample(1:6,num_rolls,replace=TRUE)
 win_total<-function(roll){
-  if (roll1 %in% c(2,4,6)){
-    return(roll1)
-  }else{
-    return(-cost_per_play)
+  if (any(roll) %in% c(2, 4, 6)) {
+    return(roll)
+  } else {
+    return(-cost_per_roll)
   }
 }
 win<-sum(sapply(roll1,win_total))
@@ -46,7 +60,7 @@ return(win)
 }
 play_dice_4(3)
 play_dice_4(5)
-play_dice_4(6)
+play_dice_4(10)
 play_dice_4(3000)
 
 ### d)
@@ -65,6 +79,21 @@ results_high<-microbenchmark(
 print(results_low)
 print(results_high)
 ### e)
+MC_dice<-function(num_simulation,num_plays_per_simulation){
+  results<-numeric(num_simulation)
+  
+  for (i in 1:num_simulation){
+    win<-sum(sample(c(1:6),num_plays_per_simulation,replace=TRUE))
+    results[i]<-win-(num_plays_per_simulation*cost_per_roll)
+  }
+  mean_win<-mean(results)
+  return(mean_win)
+}
+MC_dice(10000,100)
+#To determine if the dice game is fair, we conduct a Monte Carlo simulation by simulating a large number of games.
+#I choose this simulation to repeat 10000 times and 100 plays for each simulation.
+#In a fair game, the expected winnings over a large number of plays should be close to zero. 
+#However, the result of simulation demonstrated a large expected winning amount (mean) of 149.939, it is not a fair game.
 
 ## Problem 2
 ### a
